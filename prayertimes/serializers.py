@@ -17,6 +17,23 @@ class PrayerTimetableSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('masjid',)
 
+    def validate(self, attrs):
+        # `masjid` is read-only (assigned by the view), so DRF's automatic
+        # UniqueTogetherValidator on (masjid, date) never fires — check it
+        # here instead, otherwise a duplicate date hits the DB constraint
+        # directly and surfaces as a 500.
+        masjid_id = self.context.get('masjid_id') or (self.instance.masjid_id if self.instance else None)
+        date = attrs.get('date', self.instance.date if self.instance else None)
+        if masjid_id and date:
+            qs = PrayerTimetable.objects.filter(masjid_id=masjid_id, date=date)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(
+                    {'date': 'A timetable entry for this masjid and date already exists.'}
+                )
+        return attrs
+
 
 class JummaTimeSerializer(serializers.ModelSerializer):
     class Meta:

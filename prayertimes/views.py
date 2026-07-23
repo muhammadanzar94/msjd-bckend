@@ -28,6 +28,11 @@ class PrayerTimetableListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(date__lte=end)
         return qs
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['masjid_id'] = self.kwargs['masjid_id']
+        return context
+
     def perform_create(self, serializer):
         masjid = Masjid.objects.get(pk=self.kwargs['masjid_id'])
         self.check_object_permissions(self.request, masjid)

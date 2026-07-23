@@ -1,6 +1,7 @@
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from users.permissions import IsSystemAdmin, IsSystemAdminOrOwnMasjidAdmin
@@ -30,9 +31,9 @@ class MasjidListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         if user.role != 'masjid_admin' or not user.is_approved:
-            raise permissions.PermissionDenied('Only approved masjid admins can create a masjid.')
+            raise PermissionDenied('Only approved masjid admins can create a masjid.')
         if user.masjid_id:
-            raise permissions.PermissionDenied('You already manage a masjid.')
+            raise PermissionDenied('You already manage a masjid.')
         serializer.save()
 
 
