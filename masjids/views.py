@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -114,3 +116,16 @@ class MasjidImageDetailView(generics.RetrieveDestroyAPIView):
     serializer_class = MasjidImageSerializer
     permission_classes = [IsSystemAdminOrOwnMasjidAdmin]
     queryset = MasjidImage.objects.all()
+
+
+@method_decorator(ratelimit(key='ip', rate='20/m', method='GET', block=True), name='get')
+class PublicMasjidDetailView(APIView):
+    """Guest-facing endpoint — masjid is resolved from the request's
+    subdomain by TenantMiddleware. Only serves approved masjids."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        masjid = request.masjid
+        if masjid is None or masjid.status != Masjid.Status.APPROVED:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(MasjidSerializer(masjid).data)

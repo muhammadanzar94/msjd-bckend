@@ -23,6 +23,8 @@ class User(AbstractUser, TimeStampedModel):
     )
 
     def save(self, *args, **kwargs):
+        if self.is_superuser:
+            self.role = self.Role.SYSTEM_ADMIN
         if self.role == self.Role.SYSTEM_ADMIN:
             self.is_approved = True
         super().save(*args, **kwargs)
