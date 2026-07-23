@@ -62,7 +62,7 @@ class MasjidApprovalView(APIView):
             return Response({'detail': "action must be 'approve' or 'reject'."}, status=400)
 
         masjid.save(update_fields=['status'])
-        return Response(MasjidSerializer(masjid).data)
+        return Response(MasjidSerializer(masjid, context={'request': request}).data)
 
 
 class MasjidThemeUpdateView(generics.RetrieveUpdateAPIView):
@@ -129,4 +129,4 @@ class PublicMasjidDetailView(APIView):
         masjid = request.masjid
         if masjid is None or masjid.status != Masjid.Status.APPROVED:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
-        return Response(MasjidSerializer(masjid).data)
+        return Response(MasjidSerializer(masjid, context={'request': request}).data)
