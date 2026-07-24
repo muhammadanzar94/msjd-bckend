@@ -4,17 +4,40 @@ from django.db import models
 from core.models import TimeStampedModel
 
 
+MAX_INTRO_VIDEO_SIZE = 30 * 1024 * 1024  # 30 MB
+
+
+def validate_masjid_video_size(file):
+    if file.size > MAX_INTRO_VIDEO_SIZE:
+        raise ValidationError(
+            f'Video must be 30MB or smaller (got {file.size / (1024 * 1024):.1f}MB).'
+        )
+
+
 def validate_masjid_video_duration(file):
-    import subprocess
     import json
+    import subprocess
+    import tempfile
 
     try:
-        result = subprocess.run(
-            ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
-             '-of', 'json', file.temporary_file_path()],
-            capture_output=True, text=True, timeout=10
-        )
+        # `file` may be held in memory (small uploads) or already
+        # disk-backed (large ones) — write it to a real temp file so
+        # ffprobe always has a path to read, regardless of which.
+        with tempfile.NamedTemporaryFile(suffix='.tmp') as tmp:
+            for chunk in file.chunks():
+                tmp.write(chunk)
+            tmp.flush()
+            result = subprocess.run(
+                ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+                 '-of', 'json', tmp.name],
+                capture_output=True, text=True, timeout=10
+            )
         duration = float(json.loads(result.stdout)['format']['duration'])
+    except FileNotFoundError:
+        raise ValidationError(
+            'Video duration could not be checked because ffmpeg is not installed on the server. '
+            'Ask your administrator to run: sudo apt install ffmpeg'
+        )
     except Exception:
         raise ValidationError('Could not verify video duration. Please upload a valid video file.')
 
@@ -52,9 +75,10 @@ class Masjid(TimeStampedModel):
         blank=True, null=True,
         validators=[
             FileExtensionValidator(allowed_extensions=['mp4', 'mov', 'webm']),
+            validate_masjid_video_size,
             validate_masjid_video_duration,
         ],
-        help_text='Optional intro video, max 30 seconds'
+        help_text='Optional intro video, max 30 seconds and 30MB'
     )
 
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
