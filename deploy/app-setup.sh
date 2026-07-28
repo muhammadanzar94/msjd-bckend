@@ -9,6 +9,9 @@ FRONTEND_DIR="$HOME/msjd-frontend"
 
 echo "== Django: venv + deps + migrate + collectstatic =="
 cd "$BACKEND_DIR"
+rm -rf venv   # always recreate clean — a venv left over from a different
+              # Python version (or a previous failed run) can leave pip and
+              # python resolving different site-packages directories.
 python3.12 -m venv venv
 # Call the venv's binaries directly rather than `source activate` — activate
 # is meant for interactive shells; calling by path is the robust pattern
