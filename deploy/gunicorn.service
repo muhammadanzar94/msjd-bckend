@@ -1,0 +1,21 @@
+[Unit]
+Description=Gunicorn daemon for the Msjd Django backend
+After=network.target mysql.service
+
+[Service]
+# Replace __USER__ below with your actual VM username (whoami) before installing.
+User=__USER__
+Group=__USER__
+WorkingDirectory=/home/__USER__/masjid
+EnvironmentFile=/home/__USER__/masjid/.env
+ExecStart=/home/__USER__/masjid/venv/bin/gunicorn \
+    --workers 2 \
+    --bind 127.0.0.1:8000 \
+    --access-logfile - \
+    --error-logfile - \
+    msjd_backend.wsgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

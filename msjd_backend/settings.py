@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from datetime import timedelta
 from pathlib import Path
-from decouple import config
+from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,16 +22,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&zqq8py5&4k+oo!jxh572hs*bpqc8l5+cd1v5uqip&oo5c$m90'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-&zqq8py5&4k+oo!jxh572hs*bpqc8l5+cd1v5uqip&oo5c$m90')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
 BASE_DOMAIN = config('BASE_DOMAIN', default='localhost')
 
 # Leading dot allows any subdomain (e.g. masjid-noor.localhost) to reach the
-# app even under DEBUG=True, which only auto-allows the bare host.
-ALLOWED_HOSTS = ['.localhost', '127.0.0.1']
+# app even under DEBUG=True, which only auto-allows the bare host. In
+# production, set ALLOWED_HOSTS=yourdomain.com,.yourdomain.com in .env.
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='.localhost,127.0.0.1', cast=Csv())
 
 
 # Application definition
@@ -162,6 +163,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
