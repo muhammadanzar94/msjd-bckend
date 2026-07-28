@@ -5,6 +5,12 @@ set -euo pipefail
 
 : "${DB_PASSWORD:?Set DB_PASSWORD env var first, e.g. DB_PASSWORD=xxx bash provision-vm.sh}"
 
+# Suppress apt's package-config prompts and needrestart's "which services
+# should restart?" dialog — both otherwise block a scripted run waiting for
+# keyboard input that never comes over a piped/non-interactive session.
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+
 echo "== Updating system =="
 sudo apt-get update && sudo apt-get upgrade -y
 
