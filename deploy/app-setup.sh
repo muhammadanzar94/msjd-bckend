@@ -10,12 +10,13 @@ FRONTEND_DIR="$HOME/msjd-frontend"
 echo "== Django: venv + deps + migrate + collectstatic =="
 cd "$BACKEND_DIR"
 python3.12 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py collectstatic --noinput
-deactivate
+# Call the venv's binaries directly rather than `source activate` — activate
+# is meant for interactive shells; calling by path is the robust pattern
+# for scripts and can't silently fall through to the system Python.
+venv/bin/pip install --upgrade pip
+venv/bin/pip install -r requirements.txt
+venv/bin/python manage.py migrate
+venv/bin/python manage.py collectstatic --noinput
 
 echo "== Next.js: install + build =="
 cd "$FRONTEND_DIR"
