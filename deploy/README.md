@@ -90,7 +90,7 @@ Then on the VM:
 git clone https://github.com/muhammadanzar94/msjd-bckend.git masjid
 git clone https://github.com/muhammadanzar94/msjd-frontend.git msjd-frontend
 
-DB_PASSWORD='a@n0NxZRrTi163!' bash masjid/deploy/provision-vm.sh
+DB_PASSWORD='choose-a-strong-password' bash masjid/deploy/provision-vm.sh
 ```
 
 ## 5. Configure environment variables
