@@ -14,8 +14,14 @@ export NEEDRESTART_MODE=a
 echo "== Updating system =="
 sudo apt-get update && sudo apt-get upgrade -y
 
-echo "== Installing Python, MySQL, nginx, certbot, ffmpeg =="
-sudo apt-get install -y python3 python3-venv python3-pip python3-dev \
+echo "== Installing Python 3.12 (Django 6 requires it — Ubuntu 22.04 ships 3.10 by default) =="
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install -y python3.12 python3.12-venv python3.12-dev
+
+echo "== Installing MySQL, nginx, certbot, ffmpeg, build tools =="
+sudo apt-get install -y \
     default-libmysqlclient-dev pkg-config build-essential \
     mysql-server nginx certbot python3-certbot-nginx git ffmpeg
 
