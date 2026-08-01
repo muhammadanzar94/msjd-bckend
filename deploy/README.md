@@ -213,7 +213,22 @@ setup stays the same.
 ## Redeploying after code changes
 
 ```bash
-cd ~/masjid && git pull && source venv/bin/activate && pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput && deactivate && sudo systemctl restart gunicorn
+cd ~/masjid && git pull && venv/bin/pip install -r requirements.txt && venv/bin/python manage.py migrate && venv/bin/python manage.py collectstatic --noinput && sudo systemctl restart gunicorn
 
 cd ~/msjd-frontend && git pull && npm install && npm run build && sudo systemctl restart nextjs
+```
+
+## Checking everything's healthy
+
+```bash
+sudo systemctl status gunicorn nextjs mysql nginx --no-pager
+```
+
+Or one at a time (also works with `is-active` for a plain yes/no):
+
+```bash
+sudo systemctl status gunicorn      # Django backend
+sudo systemctl status nextjs        # Next.js frontend
+sudo systemctl status mysql         # database
+sudo systemctl is-active gunicorn nextjs mysql nginx
 ```
