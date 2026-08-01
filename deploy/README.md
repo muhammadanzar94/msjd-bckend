@@ -232,3 +232,22 @@ sudo systemctl status nextjs        # Next.js frontend
 sudo systemctl status mysql         # database
 sudo systemctl is-active gunicorn nextjs mysql nginx
 ```
+
+## Logs
+
+```bash
+sudo journalctl -u gunicorn -f     # backend, live
+sudo journalctl -u nextjs -f       # frontend, live
+sudo journalctl -u mysql -f        # database, live
+sudo journalctl -u nginx -f        # nginx's own service log (usually quiet)
+```
+
+Drop `-f` and add `-n 100` for the last 100 lines without following. Also
+useful: `--since "10 min ago"`.
+
+nginx keeps separate request/error logs outside the journal:
+
+```bash
+sudo tail -f /var/log/nginx/access.log   # every request nginx handles
+sudo tail -f /var/log/nginx/error.log    # e.g. "connection refused" if gunicorn/nextjs is down
+```

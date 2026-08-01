@@ -1,8 +1,11 @@
 from rest_framework import serializers
+from core.fields import AbsoluteFileField, AbsoluteImageField
 from .models import Masjid, MasjidTheme, DonationDetail, MasjidImage
 
 
 class MasjidThemeSerializer(serializers.ModelSerializer):
+    background_image = AbsoluteImageField(required=False, allow_null=True)
+
     class Meta:
         model = MasjidTheme
         fields = ('id', 'primary_color', 'secondary_color', 'font_family', 'background_image')
@@ -15,6 +18,8 @@ class DonationDetailSerializer(serializers.ModelSerializer):
 
 
 class MasjidImageSerializer(serializers.ModelSerializer):
+    image = AbsoluteImageField()
+
     class Meta:
         model = MasjidImage
         fields = ('id', 'image', 'order')
@@ -30,6 +35,8 @@ class MasjidSerializer(serializers.ModelSerializer):
     theme = MasjidThemeSerializer(read_only=True)
     donation_details = DonationDetailSerializer(many=True, read_only=True)
     images = MasjidImageSerializer(many=True, read_only=True)
+    logo = AbsoluteImageField(required=False, allow_null=True)
+    intro_video = AbsoluteFileField(required=False, allow_null=True)
 
     class Meta:
         model = Masjid
@@ -45,6 +52,9 @@ class MasjidSerializer(serializers.ModelSerializer):
 
 class MasjidCreateSerializer(serializers.ModelSerializer):
     """Used on creation — masjid admin submits this, status always starts pending."""
+
+    logo = AbsoluteImageField(required=False, allow_null=True)
+    intro_video = AbsoluteFileField(required=False, allow_null=True)
 
     class Meta:
         model = Masjid

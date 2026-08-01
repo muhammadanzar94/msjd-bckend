@@ -167,3 +167,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# When set, image/video URLs in API responses are built from this instead of
+# the request's own Host — needed because the Next.js frontend calls Django
+# server-to-server via 127.0.0.1, which would otherwise leak into every
+# media URL returned to the browser. See core/fields.py. Leave unset for
+# local dev, where request and browser share a host anyway.
+PUBLIC_BASE_URL = config('PUBLIC_BASE_URL', default='')
