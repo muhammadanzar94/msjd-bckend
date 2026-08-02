@@ -4,7 +4,7 @@ Sorted by distance from Bolton, UK.
 
 Usage:
     export GOOGLE_MAPS_API_KEY=""
-    python mosque_finder.py --output mosques_no_website.xlsx
+    python deploy/script.py --output mosques_no_website.xlsx
 """
 
 import os
@@ -21,7 +21,7 @@ BOLTON_COORDS = (53.5769, -2.4282)
 
 # Bounding box roughly covering mainland UK (lat_min, lat_max, lon_min, lon_max)
 # UK_BOUNDS = (49.9, 58.7, -6.5, 1.8)
-UK_BOUNDS = (53.30, 53.65, -2.75, -1.90)  # greater manchester
+# UK_BOUNDS = (53.30, 53.65, -2.75, -1.90)  # greater manchester
 
 SEARCH_RADIUS_M = 20000   # 20km per grid cell
 GRID_STEP_DEG = 0.35      # ~35-40km spacing between grid points
@@ -40,13 +40,17 @@ def build_grid(bounds, step):
     return points
 
 
-def nearby_search(api_key, lat, lon, radius, session):
+def nearby_search(api_key, lat, lon, radius, session, place_type=None, keyword=None):
     params = {
         "location": f"{lat},{lon}",
         "radius": radius,
-        "type": "mosque",
         "key": api_key,
     }
+    if place_type:
+        params["type"] = place_type
+    if keyword:
+        params["keyword"] = keyword
+
     place_ids = set()
     while True:
         resp = session.get(PLACES_NEARBY_URL, params=params, timeout=15)
@@ -60,22 +64,21 @@ def nearby_search(api_key, lat, lon, radius, session):
         next_token = data.get("next_page_token")
         if not next_token:
             break
-        # next_page_token needs a short delay before it becomes valid
         time.sleep(2)
         params = {"pagetoken": next_token, "key": api_key}
     return place_ids
-
 
 def get_place_details(api_key, place_id, session):
     params = {
         "place_id": place_id,
         "fields": "name,formatted_address,formatted_phone_number,international_phone_number,"
-                   "website,geometry,address_component,url",
+                   "website,geometry,address_components,url",   # fixed: plural
         "key": api_key,
     }
     resp = session.get(PLACES_DETAILS_URL, params=params, timeout=15)
     data = resp.json()
     if data.get("status") != "OK":
+        print(f"  [warn] details status={data.get('status')} for {place_id}: {data.get('error_message', '')}")
         return None
     return data.get("result")
 
@@ -86,6 +89,8 @@ def extract_address_component(components, target_types):
             return comp["long_name"]
     return ""
 
+SEARCH_KEYWORDS = ["masjid", "mosque"]
+
 
 def collect_place_ids(api_key):
     session = requests.Session()
@@ -93,12 +98,15 @@ def collect_place_ids(api_key):
     print(f"Scanning {len(grid)} grid points across the UK...")
     all_ids = set()
     for i, (lat, lon) in enumerate(grid, 1):
-        ids = nearby_search(api_key, lat, lon, SEARCH_RADIUS_M, session)
-        all_ids.update(ids)
-        print(f"  [{i}/{len(grid)}] ({lat},{lon}) -> {len(ids)} results, total unique so far: {len(all_ids)}")
-        time.sleep(0.2)  # basic pacing to stay under QPS limits
-    return all_ids
+        found = nearby_search(api_key, lat, lon, SEARCH_RADIUS_M, session, place_type="mosque")
+        for kw in SEARCH_KEYWORDS:
+            found |= nearby_search(api_key, lat, lon, SEARCH_RADIUS_M, session, keyword=kw)
 
+        all_ids.update(found)
+        print(f"  [{i}/{len(grid)}] ({lat},{lon}) -> {len(found)} results this point, "
+              f"total unique so far: {len(all_ids)}")
+        time.sleep(0.2)
+    return all_ids
 
 def build_rows(api_key, place_ids):
     session = requests.Session()
@@ -114,11 +122,11 @@ def build_rows(api_key, place_ids):
         phone = details.get("formatted_phone_number") or details.get("international_phone_number") or ""
         phone = phone.strip()
 
-        # Only keep mosques with a phone number but NO website
-        if website or not phone:
+        # Keep all mosques with no website, regardless of whether a phone number exists
+        if website:
             continue
 
-        components = details.get("address_component", [])
+        components = details.get("address_components", [])
         postcode = extract_address_component(components, ["postal_code"])
         city = extract_address_component(components, ["postal_town", "locality"])
 
@@ -138,8 +146,8 @@ def build_rows(api_key, place_ids):
             "Postcode": postcode,
             "City": city,
             "Google Maps Link": gmaps_link,
-            "Phone Number": phone,
-            "Website": website,
+            "Phone Number": phone,  # blank if Google has none listed
+            "Website": website,     # always blank here since we filtered on no-website
             "Distance from Bolton (km)": distance_km,
         })
 
@@ -147,7 +155,6 @@ def build_rows(api_key, place_ids):
             print(f"  [{i}/{total}] processed, {len(rows)} matches so far")
 
     return rows
-
 
 def main():
     parser = argparse.ArgumentParser(description="Find UK mosques with phone but no website.")
