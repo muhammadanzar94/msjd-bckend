@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from masjids.views import PublicMasjidDetailView
+from masjids.views import PublicMasjidDetailView, PublicDemoMasjidView
 from prayertimes.views import PublicMasjidTimetableView
 
 urlpatterns = [
@@ -12,6 +12,7 @@ urlpatterns = [
     path('api/prayertimes/', include('prayertimes.urls')),
     path('api/public/masjid/', PublicMasjidDetailView.as_view(), name='public-masjid-detail'),
     path('api/public/masjid/timetable/', PublicMasjidTimetableView.as_view(), name='public-masjid-timetable'),
+    path('api/public/masjids/demo/', PublicDemoMasjidView.as_view(), name='public-demo-masjid'),
 ]
 
 if settings.DEBUG:

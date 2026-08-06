@@ -130,3 +130,17 @@ class PublicMasjidDetailView(APIView):
         if masjid is None or masjid.status != Masjid.Status.APPROVED:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         return Response(MasjidSerializer(masjid, context={'request': request}).data)
+
+
+@method_decorator(ratelimit(key='ip', rate='20/m', method='GET', block=True), name='get')
+class PublicDemoMasjidView(APIView):
+    """Guest-facing endpoint returning the slug of the first masjid ever
+    approved on the platform — used for the marketing site's 'live demo' link
+    so it doesn't need to be hardcoded to one mosque."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        masjid = Masjid.objects.filter(status=Masjid.Status.APPROVED).order_by('created_at').first()
+        if masjid is None:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'slug': masjid.slug})
