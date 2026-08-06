@@ -38,4 +38,13 @@ sudo ln -sf /etc/nginx/sites-available/msjid /etc/nginx/sites-enabled/msjid
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 
+echo "== Opening permissions so nginx (running as www-data) can read uploaded media =="
+# Ubuntu's default home directory permissions (750) block anyone outside
+# your own user/group — including www-data — from even traversing into it,
+# which nginx needs to do to serve files under ~/masjid/media/ via its
+# `alias` directive. Without this, every uploaded image/video 403s.
+mkdir -p "$BACKEND_DIR/media"
+chmod o+x "$HOME" "$BACKEND_DIR"
+chmod -R o+rX "$BACKEND_DIR/media"
+
 echo "== Done. Check status with: sudo systemctl status gunicorn nextjs nginx =="

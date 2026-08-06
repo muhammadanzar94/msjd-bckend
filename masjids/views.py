@@ -30,6 +30,9 @@ class MasjidListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
+        if user.role == 'system_admin':
+            serializer.save()
+            return
         if user.role != 'masjid_admin' or not user.is_approved:
             raise PermissionDenied('Only approved masjid admins can create a masjid.')
         if user.masjid_id:

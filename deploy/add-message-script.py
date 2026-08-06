@@ -10,15 +10,16 @@ Usage:
 import re
 import pandas as pd
 
-INPUT_FILE = "manchester_mosques.xlsx"
-OUTPUT_FILE = "manchester_msgs.xlsx"  # change to INPUT_FILE to overwrite in place
+INPUT_FILE = "mosques_part_2.xlsx"
+OUTPUT_FILE = "msgs_mosques_part_2.xlsx"  # change to INPUT_FILE to overwrite in place
 
-MESSAGE_TEMPLATE = """Assalamu Alaikum. {name} doesn't have a website yet - I build free ones for masjids.
-See an example + details: 
-https://youtube.com/shorts/0QxAGnopdrE?si=bGYj_3dtFpXyZUgG
-https://youtu.be/pxCBEFcVQy8?si=P6dki2qfiZ8OpSxp
+MESSAGE_TEMPLATE = """Assalamu Alaikum. {name} doesn't have a website yet.
 
-for more info message at: +447435603167
+I build free masjid websites — prayer timings, events, and your own info, set up in a few hours.
+
+Example: https://jamia-bury.msjid.co.uk/
+
+Just a one-time £50 setup fee. If you're interested, reply here and I'll get started.
 """
 
 

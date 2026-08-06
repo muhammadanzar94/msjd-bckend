@@ -1,10 +1,11 @@
 """
 Find UK mosques/masjids with a phone number but no website, export to Excel.
-Sorted by distance from Bolton, UK.
+Sorted by distance from Bolton, UK. Results are split into multiple Excel
+files of 250 mosques each, saved into an output folder.
 
 Usage:
     export GOOGLE_MAPS_API_KEY=""
-    python deploy/script.py --output mosques_no_website.xlsx
+    python deploy/script.py --output-dir mosques_output
 """
 
 import os
@@ -14,13 +15,15 @@ import requests
 import pandas as pd
 from geopy.distance import geodesic
 
+ROWS_PER_FILE = 250
+
 PLACES_NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 PLACES_DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
 
 BOLTON_COORDS = (53.5769, -2.4282)
 
 # Bounding box roughly covering mainland UK (lat_min, lat_max, lon_min, lon_max)
-# UK_BOUNDS = (49.9, 58.7, -6.5, 1.8)
+UK_BOUNDS = (49.9, 58.7, -6.5, 1.8)
 # UK_BOUNDS = (53.30, 53.65, -2.75, -1.90)  # greater manchester
 
 SEARCH_RADIUS_M = 20000   # 20km per grid cell
@@ -156,11 +159,24 @@ def build_rows(api_key, place_ids):
 
     return rows
 
+def save_in_chunks(df, output_dir, rows_per_file):
+    os.makedirs(output_dir, exist_ok=True)
+    total = len(df)
+    num_files = (total + rows_per_file - 1) // rows_per_file if total else 0
+    for i in range(num_files):
+        chunk = df.iloc[i * rows_per_file : (i + 1) * rows_per_file]
+        path = os.path.join(output_dir, f"mosques_part_{i + 1}.xlsx")
+        chunk.to_excel(path, index=False, engine="openpyxl")
+        print(f"Saved {len(chunk)} rows to {path}")
+    return num_files
+
+
 def main():
     parser = argparse.ArgumentParser(description="Find UK mosques with phone but no website.")
     parser.add_argument("--api-key", default=os.environ.get("GOOGLE_MAPS_API_KEY"),
                          help="Google Maps API key (or set GOOGLE_MAPS_API_KEY env var)")
-    parser.add_argument("--output", default="mosques_no_website.xlsx", help="Output Excel file path")
+    parser.add_argument("--output-dir", default="mosques_output",
+                         help="Folder to save the Excel files into (250 mosques per file)")
     parser.add_argument("--sort-by-distance", action="store_true", default=True,
                          help="Sort results by distance from Bolton (default: on)")
     args = parser.parse_args()
@@ -178,8 +194,8 @@ def main():
     if args.sort_by_distance and not df.empty:
         df = df.sort_values("Distance from Bolton (km)", na_position="last")
 
-    df.to_excel(args.output, index=False, engine="openpyxl")
-    print(f"Saved to {args.output}")
+    num_files = save_in_chunks(df, args.output_dir, ROWS_PER_FILE)
+    print(f"\nDone. {len(df)} mosques written across {num_files} file(s) in '{args.output_dir}/'.")
 
 
 if __name__ == "__main__":
